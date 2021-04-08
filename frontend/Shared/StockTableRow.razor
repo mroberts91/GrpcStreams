@@ -1,0 +1,47 @@
+﻿@using System.Threading
+@inject GrpcClientFactory ClientFactory
+@inject ILogger<StockTableRow> Logger
+
+@if (SymbolData != null)
+{
+    <tr>
+        <th>@Symbol</th>
+        <th style="color: @(SymbolData.CurrentPrice >= _lastPrice ? "#1FB46C" : "#FA5E66");">@SymbolData.CurrentPrice.ToString("C")</th>
+        <td>
+            <a class="btn btn-primary" href="@($"stock/{Symbol}")">View</a>
+        </td>
+    </tr>
+}
+
+@code {
+    [Parameter]
+    public string Symbol { get; set; }
+    public SymbolResponse SymbolData { get; set; }
+    private double _lastPrice = 0.00;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GetStreamDataAsync();
+        }
+    }
+
+    private async Task GetStreamDataAsync()
+    {
+        var client = ClientFactory.StockSymbolsClient();
+        using var stream = client.SymbolStream(new() { Symbol = Symbol });
+        while (true)
+        {
+            if (stream is null)
+            {
+                Logger.LogError("Symbol Stream is null for {symbol}", Symbol);
+                continue;
+            }
+            await stream.ResponseStream.MoveNext(CancellationToken.None);
+            _lastPrice = SymbolData?.CurrentPrice ?? 0.00;
+            SymbolData = stream.ResponseStream.Current;
+            await InvokeAsync(() => StateHasChanged());
+        }
+    }
+}

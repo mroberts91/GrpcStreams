@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option csharp_namespace = "Streams.Stocks";
+
+package stocks;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// The greeting service definition.
+service StockSymbols {
+  // Sends a greeting
+  rpc Symbols (google.protobuf.Empty) returns (SymbolsResponse);
+  rpc Symbol (SymbolRequest) returns (SymbolResponse);
+  rpc SymbolStream (SymbolRequest) returns (stream SymbolResponse);
+}
+
+message SymbolsResponse{
+	repeated string symbolList = 1;
+}
+
+message SymbolRequest{
+	string symbol = 1;
+}
+
+message SymbolResponse{
+	string symbol = 1;
+	double currentPrice = 2;
+	google.protobuf.Timestamp updated = 3;
+}

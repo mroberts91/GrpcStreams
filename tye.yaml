@@ -1,0 +1,5 @@
+services:
+- name: backend
+  project: backend/Streams.csproj
+- name: frontend
+  project: frontend\StreamClient.csproj
