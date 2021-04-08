@@ -1,5 +1,5 @@
 @page "/"
-@inject GrpcClientFactory ClientFactory
+@inject ISymbolService SymbolService
 
 <h1>Grpc Server to Client Streams</h1>
 <br />
@@ -27,12 +27,11 @@ else
 }
 
 @code{
-    private List<string> Symbols { get; set; }
+    private IEnumerable<string> Symbols { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         await Task.Delay(2000);
-        var client = ClientFactory.StockSymbolsClient();
-        Symbols = (await client.SymbolsAsync(new())).SymbolList.ToList();
+        Symbols = await SymbolService.SymbolsAsync();
     }
 }

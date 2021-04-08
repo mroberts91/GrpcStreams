@@ -1,6 +1,7 @@
 ﻿@using System.Threading
-@inject GrpcClientFactory ClientFactory
+@inject ISymbolService SymbolService
 @inject ILogger<StockTableRow> Logger
+@inject NavigationManager NavigationManager
 
 @if (SymbolData != null)
 {
@@ -16,7 +17,9 @@
 @code {
     [Parameter]
     public string Symbol { get; set; }
+
     public SymbolResponse SymbolData { get; set; }
+    public CancellationTokenSource _tokenSource = new();
     private double _lastPrice = 0.00;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -29,19 +32,18 @@
 
     private async Task GetStreamDataAsync()
     {
-        var client = ClientFactory.StockSymbolsClient();
-        using var stream = client.SymbolStream(new() { Symbol = Symbol });
-        while (true)
+        
+        var stream = SymbolService.SymbolStream(new() { Symbol = Symbol }, _tokenSource.Token);
+        await foreach (SymbolResponse response in stream)
         {
-            if (stream is null)
-            {
-                Logger.LogError("Symbol Stream is null for {symbol}", Symbol);
-                continue;
-            }
-            await stream.ResponseStream.MoveNext(CancellationToken.None);
             _lastPrice = SymbolData?.CurrentPrice ?? 0.00;
-            SymbolData = stream.ResponseStream.Current;
+            SymbolData = response;
             await InvokeAsync(() => StateHasChanged());
         }
+    }
+
+    private void OnLocationChange(object sender, LocationChangedEventArgs args)
+    {
+        _tokenSource.Cancel();
     }
 }

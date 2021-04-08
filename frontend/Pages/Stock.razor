@@ -1,6 +1,6 @@
 ﻿@page "/stock/{symbol?}"
 @using System.Threading
-@inject GrpcClientFactory ClientFactory
+@inject ISymbolService SymbolService
 @inject ILogger<Stock> Logger
 @inject NavigationManager NavigationManager
 
@@ -33,7 +33,7 @@
     {
         if (firstRender)
         {
-            NavigationManager.LocationChanged += OnLoactionChanged;
+            NavigationManager.LocationChanged += OnLocationChanged;
             await GetStreamDataAsync();
         }
     }
@@ -42,13 +42,12 @@
     {
         try
         {
-            var client = ClientFactory.StockSymbolsClient();
-            using var stream = client.SymbolStream(new() { Symbol = Symbol ?? "NOK" });
-            while (await stream.ResponseStream.MoveNext(_tokenSource.Token))
+            var stream = SymbolService.SymbolStream(new() { Symbol = Symbol ?? "NOK" }, _tokenSource.Token);
+            await foreach (SymbolResponse response in stream)
             {
                 _lastPrice = SymbolData?.CurrentPrice ?? 0.00;
-                SymbolData = stream.ResponseStream.Current;
-                Logger.LogInformation("Stream data recieved: {stk}:{price}", SymbolData.Symbol, SymbolData.CurrentPrice);
+                SymbolData = response;
+                Logger.LogInformation("Stream data received: {stk}:{price}", SymbolData.Symbol, SymbolData.CurrentPrice);
                 await InvokeAsync(() => StateHasChanged());
             }
         }
@@ -60,7 +59,7 @@
         }
     }
 
-    private void OnLoactionChanged(object? sender, LocationChangedEventArgs? args)
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs? args)
     {
         _tokenSource.Cancel();
     }

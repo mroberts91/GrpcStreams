@@ -7,7 +7,6 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Streams.Stocks;
-using System.Text.Json;
 
 namespace Streams
 {
