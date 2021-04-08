@@ -1,10 +1,14 @@
 @page "/"
 @inject GrpcClientFactory ClientFactory
 
-<h1>Hello, world!</h1>
+<h1>Grpc Server to Client Streams</h1>
 <br />
 <br />
-@if (Symbols is not null)
+@if (Symbols is null)
+{
+    <h3>Loading ...</h3>
+}
+else
 {
     <table class="table table-borderless">
         <thead>

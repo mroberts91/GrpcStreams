@@ -15,6 +15,7 @@ namespace StreamClient.Data
             var port = configuration.GetValue<string>("BACKEND_HTTPS_SERVICE_PORT");
             var protocol = configuration.GetValue<string>("BACKEND_HTTPS_SERVICE_PROTOCOL");
 
+            // Add a transient GRPC channel to the IOC
             services.AddTransient(sp => GrpcChannel.ForAddress($"{protocol}://{host}:{port}"));
             services.AddScoped<GrpcClientFactory>();
 

@@ -15,8 +15,9 @@ namespace Streams
     {
         private readonly ILogger<SymbolsService> _logger;
         private readonly Random _random = new();
-        private static int _streamRecordCount;
-        private static readonly List<StockSymbol> _symbols = new(24)
+        private int _streamRecordCount = 0;
+        private readonly object _lockObject = new();
+        private readonly List<StockSymbol> _symbols = new(24)
         {
             new("AC", 7.09),
             new("NOK", 4.37),
@@ -61,7 +62,7 @@ namespace Streams
                             Symbol = request.Symbol,
                             Updated = DateTime.UtcNow.ToTimestamp() 
                         });
-                await Task.Delay(1000);
+                await Task.Delay(1500);
             }
 
             _streamRecordCount = 0;
@@ -101,15 +102,19 @@ namespace Streams
             };
         }
 
-        private static StockSymbol? GetSymbolResponseFromDataStore(string symbol) =>
+        private StockSymbol? GetSymbolResponseFromDataStore(string symbol) =>
             _symbols.FirstOrDefault(s => s?.Symbol?.Equals(symbol, StringComparison.OrdinalIgnoreCase) ?? false);
-        private static void UpdateStockSymbolInDataStore(StockSymbol symbol)
+
+        private void UpdateStockSymbolInDataStore(StockSymbol symbol)
         {
             var record = GetSymbolResponseFromDataStore(symbol.Symbol);
             if (record is null) return;
 
-            _symbols.Remove(record);
-            _symbols.Add(symbol);
+            lock (_lockObject)
+            {
+                _symbols.Remove(record);
+                _symbols.Add(symbol);
+            }
         }
 
         private record StockSymbol(string Symbol, double Price);
